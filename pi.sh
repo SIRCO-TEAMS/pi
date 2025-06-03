@@ -2,6 +2,8 @@
 
 set -e
 
+sudo apt-get install -y rfkill
+
 # Dynamically get the username (prefer SUDO_USER, fallback to whoami)
 USERNAME="${SUDO_USER:-$(whoami)}"
 USERHOME="$(eval echo ~${USERNAME})"
@@ -12,7 +14,6 @@ LOG_FILE="$USERHOME/pispot/setup.log"
 mkdir -p "$USERHOME/pispot"
 
 # Unblock Wi-Fi and set country code early to avoid rfkill issues
-sudo apt-get install -y rfkill
 sudo rfkill unblock wifi
 sudo raspi-config nonint do_wifi_country US
 sudo sed -i '/^country=/d' /etc/wpa_supplicant/wpa_supplicant.conf 2>/dev/null || true
