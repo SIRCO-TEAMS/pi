@@ -14,11 +14,8 @@ SETTINGS_FILE="$USERHOME/pispot/settings.txt"
 LOG_FILE="$USERHOME/pispot/setup.log"
 mkdir -p "$USERHOME/pispot"
 
-# Unblock Wi-Fi and set country code early to avoid rfkill issues
+# Unblock Wi-Fi (no country code set here)
 sudo rfkill unblock wifi
-sudo raspi-config nonint do_wifi_country US
-sudo sed -i '/^country=/d' /etc/wpa_supplicant/wpa_supplicant.conf 2>/dev/null || true
-echo "country=US" | sudo tee -a /etc/wpa_supplicant/wpa_supplicant.conf
 
 # Define log and save_setting functions EARLY so they're available for all uses
 log() {
@@ -366,11 +363,6 @@ else
     IGNORE_BROADCAST_SSID=1
 fi
 
-# Set Wi-Fi country to US for regulatory compliance
-echo "Setting Wi-Fi country to US..."
-sudo sed -i '/^country=/d' /etc/wpa_supplicant/wpa_supplicant.conf 2>/dev/null || true
-echo "country=US" | sudo tee -a /etc/wpa_supplicant/wpa_supplicant.conf
-
 echo "Configuring hostapd..."
 sudo tee /etc/hostapd/hostapd.conf > /dev/null <<EOF
 interface=wlan0
@@ -380,7 +372,6 @@ channel=7
 wpa=2
 wpa_passphrase=${PISPOT_PASS}
 ignore_broadcast_ssid=${IGNORE_BROADCAST_SSID}
-country_code=US
 EOF
 
 sudo sed -i 's|^DAEMON_CONF=.*|DAEMON_CONF="/etc/hostapd/hostapd.conf"|' /etc/default/hostapd
@@ -425,7 +416,6 @@ log "hostapd installed and configured"
 save_setting "SSID=$PISPOT_SSID"
 save_setting "WIFI_PASSWORD=$PISPOT_PASS"
 save_setting "WIFI_VISIBLE=$PISPOT_VISIBLE"
-save_setting "WIFI_COUNTRY=US"
 save_setting "STATIC_IP=${PISPOT_IP}"
 save_setting "DHCP_RANGE=${DHCP_START}-${DHCP_END}"
 
