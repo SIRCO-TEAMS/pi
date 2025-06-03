@@ -405,9 +405,4 @@ echo "==== PiSpot setup complete! ====" | tee -a "$LOG_FILE"
 echo "Settings saved to $SETTINGS_FILE" | tee -a "$LOG_FILE"
 echo "Log saved to $LOG_FILE" | tee -a "$LOG_FILE"
 
-echo
-echo "==== FINAL STEP ===="
-echo "Unplug the ethernet cable from your Pi now."
-read -p "Press ENTER to reboot and finish setup..." _
-log "User prompted to unplug ethernet and reboot"
-sudo reboot
+log "PiSpot setup complete!"
