@@ -12,6 +12,7 @@ LOG_FILE="$USERHOME/pispot/setup.log"
 mkdir -p "$USERHOME/pispot"
 
 # Unblock Wi-Fi and set country code early to avoid rfkill issues
+sudo apt-get install -y rfkill
 sudo rfkill unblock wifi
 sudo raspi-config nonint do_wifi_country US
 sudo sed -i '/^country=/d' /etc/wpa_supplicant/wpa_supplicant.conf 2>/dev/null || true
@@ -29,6 +30,35 @@ save_setting() {
 # Clear previous settings/log
 : > "$SETTINGS_FILE"
 : > "$LOG_FILE"
+
+# --- FULL UNINSTALL OF PREVIOUS PACKAGES ---
+echo "==== Uninstalling all previous PiSpot, web, and hotspot packages ===="
+# Stop and disable services
+sudo systemctl stop nginx || true
+sudo systemctl disable nginx || true
+sudo systemctl stop hostapd || true
+sudo systemctl disable hostapd || true
+sudo systemctl stop cockpit.socket || true
+sudo systemctl disable cockpit.socket || true
+sudo systemctl stop dnsmasq || true
+sudo systemctl disable dnsmasq || true
+
+# Purge packages and remove configs
+sudo apt-get purge -y nginx nginx-common nginx-full nginx-core hostapd cockpit cockpit-ws cockpit-bridge cockpit-system cockpit-networkmanager cockpit-packagekit cockpit-storaged dnsmasq
+sudo apt-get autoremove -y
+sudo apt-get autoclean -y
+
+# Remove config files and web content
+sudo rm -rf /etc/nginx /var/www/html/pispot.html /etc/hostapd /etc/dnsmasq.conf /etc/cockpit /etc/systemd/system/cockpit.socket.d
+sudo rm -f /etc/rc.local /usb_drive.img /var/www/html/index.nginx-debian.html
+sudo rm -f ~/expand_usb.sh ~/shrink_usb.sh ~/autosave.sh ~/blink_led.sh
+sudo rm -f /home/*/expand_usb.sh /home/*/shrink_usb.sh /home/*/autosave.sh /home/*/blink_led.sh 2>/dev/null || true
+
+# Remove any leftover PiSpot config in /boot
+sudo sed -i '/dtoverlay=dwc2/d' /boot/config.txt || true
+sudo sed -i 's/ modules-load=dwc2,g_mass_storage//' /boot/cmdline.txt || true
+
+echo "==== Uninstall complete. Starting fresh setup. ===="
 
 # --- RESET EVERYTHING SECTION ---
 echo "==== PiSpot: Resetting all previous configuration ===="
