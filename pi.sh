@@ -346,24 +346,6 @@ dhcp-range=${DHCP_START},${DHCP_END},255.255.255.0,24h
 EOF
 sudo systemctl restart dnsmasq
 
-# Save settings and log actions
-SETTINGS_FILE="$USERHOME/pispot/settings.txt"
-LOG_FILE="$USERHOME/pispot/setup.log"
-mkdir -p "$USERHOME/pispot"
-
-# Define log and save_setting functions EARLY so they're available for all uses
-log() {
-    echo "$(date '+%Y-%m-%d %H:%M:%S') $*" | tee -a "$LOG_FILE"
-}
-
-save_setting() {
-    echo "$1" >> "$SETTINGS_FILE"
-}
-
-# Clear previous settings/log
-: > "$SETTINGS_FILE"
-: > "$LOG_FILE"
-
 log "LED mode selected: $LEDMODE"
 save_setting "LED_MODE=$LEDMODE"
 
