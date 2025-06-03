@@ -1,8 +1,9 @@
 #!/bin/bash
 
 set -e
-
-sudo apt-get install -y rfkill
+# PiSpot Wi-Fi Hotspot Setup Script
+# This script sets up a Raspberry Pi as a Wi-Fi hotspot with a web control panel.
+# It includes options for LED control, USB storage, and web management.
 
 # Dynamically get the username (prefer SUDO_USER, fallback to whoami)
 USERNAME="${SUDO_USER:-$(whoami)}"

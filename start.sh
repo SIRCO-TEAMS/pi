@@ -1,3 +1,6 @@
+sudo apt-get update
+sudo apt-get install -y rfkill
+
 wget https://raw.githubusercontent.com/SIRCO-TEAMS/pi/refs/heads/main/update.sh
 wget https://raw.githubusercontent.com/SIRCO-TEAMS/pi/refs/heads/main/pi.sh
 wget https://raw.githubusercontent.com/SIRCO-TEAMS/pi/refs/heads/main/reconf.sh
