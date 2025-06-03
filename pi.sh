@@ -406,3 +406,5 @@ echo "Settings saved to $SETTINGS_FILE" | tee -a "$LOG_FILE"
 echo "Log saved to $LOG_FILE" | tee -a "$LOG_FILE"
 
 log "PiSpot setup complete!"
+
+echo "\nIMPORTANT: To ensure your Wi-Fi hotspot works, run 'sudo raspi-config', go to 'Localization Options', then 'WLAN Country', and set it to your country. The hotspot will not work until this is set!"
