@@ -333,6 +333,7 @@ SETTINGS_FILE="/workspaces/pispot/settings.txt"
 LOG_FILE="/workspaces/pispot/setup.log"
 mkdir -p /workspaces/pispot
 
+# Define log and save_setting functions EARLY so they're available for all uses
 log() {
     echo "$(date '+%Y-%m-%d %H:%M:%S') $*" | tee -a "$LOG_FILE"
 }
