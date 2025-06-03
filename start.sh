@@ -4,7 +4,6 @@ wget https://raw.githubusercontent.com/SIRCO-TEAMS/pi/refs/heads/main/reconf.sh
 sudo chmod +x update.sh
 sudo chmod +x pi.sh 
 sudo chmod +x reconf.sh
-./update.sh -y
 
 echo "\n*** Now starting PiSpot Automated Setup. Please follow the prompts below. ***\n"
 bash -i ./pi.sh
