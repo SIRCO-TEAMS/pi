@@ -2,6 +2,28 @@
 
 set -e
 
+# Dynamically get the username (prefer SUDO_USER, fallback to whoami)
+USERNAME="${SUDO_USER:-$(whoami)}"
+USERHOME="$(eval echo ~${USERNAME})"
+
+# Save settings and log actions
+SETTINGS_FILE="$USERHOME/pispot/settings.txt"
+LOG_FILE="$USERHOME/pispot/setup.log"
+mkdir -p "$USERHOME/pispot"
+
+# Define log and save_setting functions EARLY so they're available for all uses
+log() {
+    echo "$(date '+%Y-%m-%d %H:%M:%S') $*" | tee -a "$LOG_FILE"
+}
+
+save_setting() {
+    echo "$1" >> "$SETTINGS_FILE"
+}
+
+# Clear previous settings/log
+: > "$SETTINGS_FILE"
+: > "$LOG_FILE"
+
 # --- RESET EVERYTHING SECTION ---
 echo "==== PiSpot: Resetting all previous configuration ===="
 # Stop and purge nginx and hostapd if present
@@ -23,10 +45,6 @@ sudo sed -i '/dtoverlay=dwc2/d' /boot/config.txt || true
 sudo sed -i 's/ modules-load=dwc2,g_mass_storage//' /boot/cmdline.txt || true
 
 echo "==== PiSpot: Reset complete ===="
-
-# Dynamically get the username (prefer SUDO_USER, fallback to whoami)
-USERNAME="${SUDO_USER:-$(whoami)}"
-USERHOME="$(eval echo ~${USERNAME})"
 
 echo "==== PiSpot Automated Setup ===="
 
@@ -329,9 +347,9 @@ EOF
 sudo systemctl restart dnsmasq
 
 # Save settings and log actions
-SETTINGS_FILE="/workspaces/pispot/settings.txt"
-LOG_FILE="/workspaces/pispot/setup.log"
-mkdir -p /workspaces/pispot
+SETTINGS_FILE="$USERHOME/pispot/settings.txt"
+LOG_FILE="$USERHOME/pispot/setup.log"
+mkdir -p "$USERHOME/pispot"
 
 # Define log and save_setting functions EARLY so they're available for all uses
 log() {
