@@ -54,6 +54,11 @@ while [ ${#PISPOT_PASS} -lt 8 ]; do
 done
 read -p "Should the network be visible? (y/n) [default: y]: " PISPOT_VISIBLE
 PISPOT_VISIBLE=${PISPOT_VISIBLE:-y}
+if [[ "$PISPOT_VISIBLE" =~ ^[Yy]$ ]]; then
+    IGNORE_BROADCAST_SSID=0
+else
+    IGNORE_BROADCAST_SSID=1
+fi
 
 echo "\n================= PiSpot Setup Summary ================="
 echo "Reset/uninstall previous: $RESET_CONFIRM"
@@ -396,8 +401,9 @@ sudo mkdir -p /etc/hostapd
 
 # Disable dhcpcd and wpa_supplicant for wlan0 to avoid conflicts (for offline AP mode)
 sudo sed -i '/^interface wlan0/d' /etc/dhcpcd.conf 2>/dev/null || true
-echo "interface wlan0" | sudo tee -a /etc/dhcpcd.conf
+echo "interface=wlan0" | sudo tee -a /etc/dhcpcd.conf
 echo "    static ip_address=${PISPOT_IP}/24" | sudo tee -a /etc/dhcpcd.conf
+echo "    nohook wpa_supplicant" | sudo tee -a /etc/dhcpcd.conf
 
 # Ensure dhcpcd is installed before attempting to restart
 if ! dpkg -l | grep -qw dhcpcd5; then
