@@ -4,7 +4,7 @@
 
 set -e
 
-APP_DIR="/workspaces/pi/pispot_node_server"
+APP_DIR="$HOME/pispot_node_server"
 PORT=${1:-3030}
 
 # Install Node.js and npm if not present
@@ -15,7 +15,7 @@ if ! command -v node >/dev/null 2>&1; then
 fi
 
 # Create app directory
-mkdir -p "$APP_DIR"
+sudo mkdir -p "$APP_DIR"
 cd "$APP_DIR"
 
 # Initialize npm project if not already
@@ -182,12 +182,12 @@ EOF
 
 # Copy expand/shrink scripts if they exist
 if [ -f /workspaces/pi/expand_usb.sh ]; then
-    cp /workspaces/pi/expand_usb.sh "$APP_DIR/expand_usb.sh"
-    chmod +x "$APP_DIR/expand_usb.sh"
+    sudo cp /workspaces/pi/expand_usb.sh "$APP_DIR/expand_usb.sh"
+    sudo chmod +x "$APP_DIR/expand_usb.sh"
 fi
 if [ -f /workspaces/pi/shrink_usb.sh ]; then
-    cp /workspaces/pi/shrink_usb.sh "$APP_DIR/shrink_usb.sh"
-    chmod +x "$APP_DIR/shrink_usb.sh"
+    sudo cp /workspaces/pi/shrink_usb.sh "$APP_DIR/shrink_usb.sh"
+    sudo chmod +x "$APP_DIR/shrink_usb.sh"
 fi
 
 cat <<EOM

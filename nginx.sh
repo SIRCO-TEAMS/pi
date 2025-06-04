@@ -3,6 +3,12 @@
 
 set -e
 
+# Ensure git is installed
+if ! command -v git >/dev/null 2>&1; then
+    echo "Installing git..."
+    sudo apt-get update && sudo apt-get install -y git
+fi
+
 REPO_URL="https://github.com/Sirco-team/code-universe.git"  # <-- Hardcoded repo URL
 
 TMP_DIR="/tmp/nginx_repo_clone_$$"
