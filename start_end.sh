@@ -9,4 +9,4 @@ echo "**************************************************************************
 echo "==== FINAL STEP ===="
 echo "Unplug the ethernet cable from your Pi now."
 read -p "Press ENTER to reboot and finish setup..." _
-sudo reboot
+sleep 1
