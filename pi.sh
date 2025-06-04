@@ -55,6 +55,20 @@ done
 read -p "Should the network be visible? (y/n) [default: y]: " PISPOT_VISIBLE
 PISPOT_VISIBLE=${PISPOT_VISIBLE:-y}
 
+echo "\n================= PiSpot Setup Summary ================="
+echo "Reset/uninstall previous: $RESET_CONFIRM"
+echo "LED mode: $LEDMODE"
+echo "USB gadget mode: $ENABLE_USB_GADGET"
+echo "Nginx port: $NGINX_PORT"
+echo "Cockpit port: $COCKPIT_PORT"
+echo "PiSpot IP: $PISPOT_IP"
+echo "DHCP range: $DHCP_START to $DHCP_END"
+echo "SSID: $PISPOT_SSID"
+echo "Wi-Fi password: [hidden]"
+echo "Network visible: $PISPOT_VISIBLE"
+echo "=======================================================\n"
+read -p "Press ENTER to continue with setup or Ctrl+C to abort..."
+
 # Save common settings
 echo "PISPOT_IP=$PISPOT_IP" >> "$SETTINGS_FILE"
 echo "NGINX_PORT=$NGINX_PORT" >> "$SETTINGS_FILE"
