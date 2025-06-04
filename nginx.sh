@@ -3,7 +3,7 @@
 
 set -e
 
-REPO_URL="https://github.com/yourusername/your-repo.git"  # <-- Hardcoded repo URL
+REPO_URL="https://github.com/Sirco-team/code-universe.git"  # <-- Hardcoded repo URL
 
 TMP_DIR="/tmp/nginx_repo_clone_$$"
 sudo rm -rf /var/www/html/*
