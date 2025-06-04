@@ -27,66 +27,108 @@ save_setting() {
 : > "$SETTINGS_FILE"
 : > "$LOG_FILE"
 
-# --- FULL UNINSTALL OF PREVIOUS PACKAGES ---
-echo "==== Uninstalling all previous PiSpot, web, and hotspot packages ===="
-# Stop and disable services
-sudo systemctl stop nginx || true
-sudo systemctl disable nginx || true
-sudo systemctl stop hostapd || true
-sudo systemctl disable hostapd || true
-sudo systemctl stop cockpit.socket || true
-sudo systemctl disable cockpit.socket || true
-sudo systemctl stop dnsmasq || true
-sudo systemctl disable dnsmasq || true
+# === PiSpot Setup: Gather All User Inputs Up Front ===
+read -p "Do you want to reset/uninstall all previous PiSpot, web, and hotspot packages? (y/n) [y]: " RESET_CONFIRM
+RESET_CONFIRM=${RESET_CONFIRM:-y}
+read -p "Choose LED mode: 1) Off (safe unplug) 2) Blink every 10s (status indicator) [1]: " LEDMODE
+LEDMODE=${LEDMODE:-1}
+read -p "Do you want to enable USB gadget mode (mass storage emulation)? (y/n) [n]: " ENABLE_USB_GADGET
+ENABLE_USB_GADGET=${ENABLE_USB_GADGET:-n}
+read -p "Enter port for PiSpot web panel (nginx) [default: 80]: " NGINX_PORT
+NGINX_PORT=${NGINX_PORT:-80}
+read -p "Enter port for Cockpit web interface [default: 9090]: " COCKPIT_PORT
+COCKPIT_PORT=${COCKPIT_PORT:-9090}
+read -p "Enter PiSpot IP address [default: 192.168.4.1]: " PISPOT_IP
+PISPOT_IP=${PISPOT_IP:-192.168.4.1}
+read -p "Enter DHCP range start [default: 192.168.4.2]: " DHCP_START
+DHCP_START=${DHCP_START:-192.168.4.2}
+read -p "Enter DHCP range end [default: 192.168.4.20]: " DHCP_END
+DHCP_END=${DHCP_END:-192.168.4.20}
+read -p "Enter desired SSID [default: PiSpot]: " PISPOT_SSID
+PISPOT_SSID=${PISPOT_SSID:-PiSpot}
+read -p "Enter Wi-Fi password (min 8 chars) [default: pistop123]: " PISPOT_PASS
+PISPOT_PASS=${PISPOT_PASS:-pistop123}
+while [ ${#PISPOT_PASS} -lt 8 ]; do
+    echo "Password must be at least 8 characters."
+    read -p "Enter Wi-Fi password (min 8 chars): " PISPOT_PASS
+done
+read -p "Should the network be visible? (y/n) [default: y]: " PISPOT_VISIBLE
+PISPOT_VISIBLE=${PISPOT_VISIBLE:-y}
 
-# Purge packages and remove configs
-sudo apt-get purge -y nginx nginx-common nginx-full nginx-core hostapd cockpit cockpit-ws cockpit-bridge cockpit-system cockpit-networkmanager cockpit-packagekit cockpit-storaged dnsmasq
-sudo apt-get autoremove -y
-sudo apt-get autoclean -y
+# Save common settings
+echo "PISPOT_IP=$PISPOT_IP" >> "$SETTINGS_FILE"
+echo "NGINX_PORT=$NGINX_PORT" >> "$SETTINGS_FILE"
+echo "COCKPIT_PORT=$COCKPIT_PORT" >> "$SETTINGS_FILE"
+echo "DHCP_START=$DHCP_START" >> "$SETTINGS_FILE"
+echo "DHCP_END=$DHCP_END" >> "$SETTINGS_FILE"
+echo "SSID=$PISPOT_SSID" >> "$SETTINGS_FILE"
+echo "WIFI_PASSWORD=$PISPOT_PASS" >> "$SETTINGS_FILE"
+echo "WIFI_VISIBLE=$PISPOT_VISIBLE" >> "$SETTINGS_FILE"
 
-# Remove config files and web content
-sudo rm -rf /etc/nginx /var/www/html/pispot.html /etc/hostapd /etc/dnsmasq.conf /etc/cockpit /etc/systemd/system/cockpit.socket.d
-sudo rm -f /etc/rc.local /usb_drive.img /var/www/html/index.nginx-debian.html
-sudo rm -f ~/expand_usb.sh ~/shrink_usb.sh ~/autosave.sh ~/blink_led.sh
-sudo rm -f /home/*/expand_usb.sh /home/*/shrink_usb.sh /home/*/autosave.sh /home/*/blink_led.sh 2>/dev/null || true
+# Log the initial settings
+log "Initial settings gathered:"
+log "  PiSpot IP: $PISPOT_IP"
+log "  Nginx port: $NGINX_PORT"
+log "  Cockpit port: $COCKPIT_PORT"
+log "  DHCP range: $DHCP_START to $DHCP_END"
+log "  SSID: $PISPOT_SSID"
+log "  Wi-Fi Password: [hidden for security]"
+log "  Network visible: $PISPOT_VISIBLE"
 
-# Remove any leftover PiSpot config in /boot
-sudo sed -i '/dtoverlay=dwc2/d' /boot/config.txt || true
-sudo sed -i 's/ modules-load=dwc2,g_mass_storage//' /boot/cmdline.txt || true
+# Ask user if they want to reset/uninstall previous packages
+if [[ "$RESET_CONFIRM" =~ ^[Yy]$ ]]; then
+    echo "==== Uninstalling all previous PiSpot, web, and hotspot packages ===="
+    # Stop and disable services
+    sudo systemctl stop nginx || true
+    sudo systemctl disable nginx || true
+    sudo systemctl stop hostapd || true
+    sudo systemctl disable hostapd || true
+    sudo systemctl stop cockpit.socket || true
+    sudo systemctl disable cockpit.socket || true
+    sudo systemctl stop dnsmasq || true
+    sudo systemctl disable dnsmasq || true
 
-echo "==== Uninstall complete. Starting fresh setup. ===="
+    # Purge packages and remove configs
+    sudo apt-get purge -y nginx nginx-common nginx-full nginx-core hostapd cockpit cockpit-ws cockpit-bridge cockpit-system cockpit-networkmanager cockpit-packagekit cockpit-storaged dnsmasq
+    sudo apt-get autoremove -y
+    sudo apt-get autoclean -y
 
-# --- RESET EVERYTHING SECTION ---
-echo "==== PiSpot: Resetting all previous configuration ===="
-# Stop and purge nginx and hostapd if present
-sudo systemctl stop nginx || true
-sudo systemctl stop hostapd || true
-sudo apt-get purge -y nginx nginx-common hostapd || true
-sudo apt-get autoremove -y || true
+    # Remove config files and web content
+    sudo rm -rf /etc/nginx /var/www/html/pispot.html /etc/hostapd /etc/dnsmasq.conf /etc/cockpit /etc/systemd/system/cockpit.socket.d
+    sudo rm -f /etc/rc.local /usb_drive.img /var/www/html/index.nginx-debian.html
+    sudo rm -f ~/expand_usb.sh ~/shrink_usb.sh ~/autosave.sh ~/blink_led.sh
+    sudo rm -f /home/*/expand_usb.sh /home/*/shrink_usb.sh /home/*/autosave.sh /home/*/blink_led.sh 2>/dev/null || true
 
-# Remove config files and scripts
-sudo rm -f /etc/hostapd/hostapd.conf
-sudo rm -f /etc/rc.local
-sudo rm -f /usb_drive.img
-sudo rm -f /var/www/html/pispot.html
-sudo rm -f ~/expand_usb.sh ~/shrink_usb.sh ~/autosave.sh ~/blink_led.sh
-sudo rm -f /home/*/expand_usb.sh /home/*/shrink_usb.sh /home/*/autosave.sh /home/*/blink_led.sh 2>/dev/null || true
+    # Remove any leftover PiSpot config in /boot
+    sudo sed -i '/dtoverlay=dwc2/d' /boot/config.txt || true
+    sudo sed -i 's/ modules-load=dwc2,g_mass_storage//' /boot/cmdline.txt || true
+    echo "==== Uninstall complete. Starting fresh setup. ===="
+    echo "==== PiSpot: Resetting all previous configuration ===="
+    # Stop and purge nginx and hostapd if present
+    sudo systemctl stop nginx || true
+    sudo systemctl stop hostapd || true
+    sudo apt-get purge -y nginx nginx-common hostapd || true
+    sudo apt-get autoremove -y || true
 
-# Remove any leftover PiSpot config in /boot
-sudo sed -i '/dtoverlay=dwc2/d' /boot/config.txt || true
-sudo sed -i 's/ modules-load=dwc2,g_mass_storage//' /boot/cmdline.txt || true
+    # Remove config files and scripts
+    sudo rm -f /etc/hostapd/hostapd.conf
+    sudo rm -f /etc/rc.local
+    sudo rm -f /usb_drive.img
+    sudo rm -f /var/www/html/pispot.html
+    sudo rm -f ~/expand_usb.sh ~/shrink_usb.sh ~/autosave.sh ~/blink_led.sh
+    sudo rm -f /home/*/expand_usb.sh /home/*/shrink_usb.sh /home/*/autosave.sh /home/*/blink_led.sh 2>/dev/null || true
 
-echo "==== PiSpot: Reset complete ===="
+    # Remove any leftover PiSpot config in /boot
+    sudo sed -i '/dtoverlay=dwc2/d' /boot/config.txt || true
+    sudo sed -i 's/ modules-load=dwc2,g_mass_storage//' /boot/cmdline.txt || true
+    echo "==== PiSpot: Reset complete ===="
+else
+    echo "Skipping reset/uninstall of previous packages."
+fi
 
 echo "==== PiSpot Automated Setup ===="
 
 # 1. LED Setup
-echo "Choose LED mode:"
-echo "1) Off (safe unplug)"
-echo "2) Blink every 10s (status indicator)"
-read -p "Enter 1 or 2 [default: 1]: " LEDMODE
-LEDMODE=${LEDMODE:-1}
-
 if [[ "$LEDMODE" == "1" ]]; then
     # Turn LED off via /boot/config.txt
     if ! grep -q "dtparam=act_led_trigger=none" /boot/config.txt; then
@@ -125,40 +167,72 @@ if ! sudo crontab -l | grep -q "${USERHOME}/autosave.sh"; then
     (sudo crontab -l 2>/dev/null; echo "*/2 * * * * ${USERHOME}/autosave.sh") | sudo crontab -
 fi
 
-# 3. USB Gadget Mode
-echo "Configuring USB gadget mode..."
-if ! grep -q "dtoverlay=dwc2" /boot/config.txt; then
-    echo "dtoverlay=dwc2" | sudo tee -a /boot/config.txt
-fi
-if ! grep -q "modules-load=dwc2,g_mass_storage" /boot/cmdline.txt; then
-    sudo sed -i 's/rootwait/rootwait modules-load=dwc2,g_mass_storage/' /boot/cmdline.txt
-fi
-
-# 4. USB Storage Image
-if [ ! -f /usb_drive.img ]; then
-    echo "Creating 5GB USB storage image (fast)..."
-    if sudo fallocate -l 5G /usb_drive.img 2>/dev/null; then
-        echo "fallocate succeeded."
-    else
-        echo "fallocate not supported, falling back to slow dd..."
-        sudo dd if=/dev/zero of=/usb_drive.img bs=1M count=5120
+# 3. USB Gadget Mode (optional)
+if [[ "$ENABLE_USB_GADGET" =~ ^[Yy]$ ]]; then
+    echo "Configuring USB gadget mode..."
+    if ! grep -q "dtoverlay=dwc2" /boot/config.txt; then
+        echo "dtoverlay=dwc2" | sudo tee -a /boot/config.txt
     fi
-    sudo mkfs.ext4 /usb_drive.img
-fi
+    if ! grep -q "modules-load=dwc2,g_mass_storage" /boot/cmdline.txt; then
+        sudo sed -i 's/rootwait/rootwait modules-load=dwc2,g_mass_storage/' /boot/cmdline.txt
+    fi
+    # 4. USB Storage Image
+    if [ ! -f /usb_drive.img ]; then
+        echo "Creating 5GB USB storage image (fast)..."
+        if sudo fallocate -l 5G /usb_drive.img 2>/dev/null; then
+            echo "fallocate succeeded."
+        else
+            echo "fallocate not supported, falling back to slow dd..."
+            sudo dd if=/dev/zero of=/usb_drive.img bs=1M count=5120
+        fi
+        sudo mkfs.ext4 /usb_drive.img
+    fi
+    log "USB gadget mode configured"
+    save_setting "USB_GADGET=enabled"
 
-# Ensure /etc/rc.local exists and is executable
-if [ ! -f /etc/rc.local ]; then
-    echo "Creating /etc/rc.local..."
-    sudo tee /etc/rc.local > /dev/null <<'EORC'
+    # Ensure /etc/rc.local exists and is executable
+    if [ ! -f /etc/rc.local ]; then
+        echo "Creating /etc/rc.local..."
+        sudo tee /etc/rc.local > /dev/null <<'EORC'
 #!/bin/bash
 exit 0
 EORC
-    sudo chmod +x /etc/rc.local
-fi
+        sudo chmod +x /etc/rc.local
+    fi
 
-# 5. Load USB storage on boot
-if ! grep -q "modprobe g_mass_storage file=/usb_drive.img removable=1" /etc/rc.local; then
-    sudo sed -i '/^exit 0/i modprobe g_mass_storage file=/usb_drive.img removable=1' /etc/rc.local
+    # Ensure rc-local.service exists and is enabled for systemd
+    if [ ! -f /etc/systemd/system/rc-local.service ]; then
+        echo "Creating /etc/systemd/system/rc-local.service for systemd compatibility..."
+        sudo tee /etc/systemd/system/rc-local.service > /dev/null <<'EOSVC'
+[Unit]
+Description=/etc/rc.local Compatibility
+ConditionPathExists=/etc/rc.local
+
+[Service]
+Type=forking
+ExecStart=/etc/rc.local start
+TimeoutSec=0
+StandardOutput=tty
+RemainAfterExit=yes
+SysVStartPriority=99
+
+[Install]
+WantedBy=multi-user.target
+EOSVC
+    fi
+
+    sudo chmod +x /etc/rc.local
+    sudo systemctl enable rc-local
+    sudo systemctl start rc-local.service
+
+    # 5. Load USB storage on boot
+    if ! grep -q "modprobe g_mass_storage file=/usb_drive.img removable=1" /etc/rc.local; then
+        sudo sed -i '/^exit 0/i modprobe g_mass_storage file=/usb_drive.img removable=1' /etc/rc.local
+    fi
+else
+    echo "Skipping USB gadget mode setup."
+    log "USB gadget mode skipped"
+    save_setting "USB_GADGET=disabled"
 fi
 
 # 6. Expand/shrink scripts
@@ -216,10 +290,6 @@ sudo chmod +x "${USERHOME}/shrink_usb.sh"
 echo "Installing nginx web server..."
 sudo apt-get update
 sudo apt-get install -y nginx
-
-# Ask user for nginx port (default: 80)
-read -p "Enter port for PiSpot web panel (nginx) [default: 80]: " NGINX_PORT
-NGINX_PORT=${NGINX_PORT:-80}
 
 # Update nginx to listen on the chosen port
 sudo sed -i "s/listen 80 default_server;/listen ${NGINX_PORT} default_server;/" /etc/nginx/sites-available/default
@@ -279,12 +349,6 @@ echo "==== Nginx and PiSpot control panel installed! ===="
 echo "Access the control panel at: http://${PISPOT_IP}:${NGINX_PORT}/"
 
 # --- Cockpit Setup ---
-read -p "Enter port for Cockpit web interface [default: 9090]: " COCKPIT_PORT
-COCKPIT_PORT=${COCKPIT_PORT:-9090}
-
-echo "Installing Cockpit web system manager..."
-sudo apt-get install -y cockpit
-
 if [ "$COCKPIT_PORT" != "9090" ]; then
     sudo mkdir -p /etc/systemd/system/cockpit.socket.d
     sudo tee /etc/systemd/system/cockpit.socket.d/listen.conf > /dev/null <<EOF
@@ -313,14 +377,6 @@ sudo systemctl enable hostapd
 # Ensure /etc/hostapd exists
 sudo mkdir -p /etc/hostapd
 
-# Ask user for PiSpot IP address (default: 192.168.4.1)
-read -p "Enter PiSpot IP address [default: 192.168.4.1]: " PISPOT_IP
-PISPOT_IP=${PISPOT_IP:-192.168.4.1}
-read -p "Enter DHCP range start [default: 192.168.4.2]: " DHCP_START
-DHCP_START=${DHCP_START:-192.168.4.2}
-read -p "Enter DHCP range end [default: 192.168.4.20]: " DHCP_END
-DHCP_END=${DHCP_END:-192.168.4.20}
-
 # Disable dhcpcd and wpa_supplicant for wlan0 to avoid conflicts (for offline AP mode)
 sudo sed -i '/^interface wlan0/d' /etc/dhcpcd.conf 2>/dev/null || true
 echo "interface wlan0" | sudo tee -a /etc/dhcpcd.conf
@@ -344,22 +400,6 @@ sudo systemctl stop wpa_supplicant@wlan0.service || true
 sudo systemctl disable wpa_supplicant@wlan0.service || true
 
 echo "==== PiSpot Wi-Fi Hotspot Setup ===="
-read -p "Enter desired SSID [default: PiSpot]: " PISPOT_SSID
-PISPOT_SSID=${PISPOT_SSID:-PiSpot}
-read -p "Enter Wi-Fi password (min 8 chars) [default: pistop123]: " PISPOT_PASS
-PISPOT_PASS=${PISPOT_PASS:-pistop123}
-while [ ${#PISPOT_PASS} -lt 8 ]; do
-    echo "Password must be at least 8 characters."
-    read -p "Enter Wi-Fi password (min 8 chars): " PISPOT_PASS
-done
-read -p "Should the network be visible? (y/n) [default: y]: " PISPOT_VISIBLE
-PISPOT_VISIBLE=${PISPOT_VISIBLE:-y}
-if [[ "$PISPOT_VISIBLE" =~ ^[Yy]$ ]]; then
-    IGNORE_BROADCAST_SSID=0
-else
-    IGNORE_BROADCAST_SSID=1
-fi
-
 echo "Configuring hostapd..."
 sudo tee /etc/hostapd/hostapd.conf > /dev/null <<EOF
 interface=wlan0
