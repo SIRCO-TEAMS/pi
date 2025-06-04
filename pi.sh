@@ -300,17 +300,20 @@ EOF
 sudo chmod +x "${USERHOME}/expand_usb.sh"
 sudo chmod +x "${USERHOME}/shrink_usb.sh"
 
+# 7. Install required packages before configuration
+echo "Installing required packages..."
+sudo apt-get update
+sudo apt-get install -y nginx hostapd dnsmasq cockpit
+
 # 7. Install nginx and deploy control panel
 echo "Installing nginx web server..."
-sudo apt-get update
-sudo apt-get install -y nginx
 
 # Update nginx to listen on the chosen port
 sudo sed -i "s/listen 80 default_server;/listen ${NGINX_PORT} default_server;/" /etc/nginx/sites-available/default
 sudo sed -i "s/listen \[::\]:80 default_server;/listen [::]:${NGINX_PORT} default_server;/" /etc/nginx/sites-available/default
 
 echo "Deploying PiSpot control panel..."
-sudo tee /var/www/html/pispot.html > /dev/null <<'EOPANEL'
+sudo tee /var/www/html/index.html > /dev/null <<'EOPANEL'
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -354,8 +357,8 @@ sudo tee /var/www/html/pispot.html > /dev/null <<'EOPANEL'
 </html>
 EOPANEL
 
-# Set pispot.html as the default nginx index
-sudo sed -i 's/index.nginx-debian.html/pispot.html/' /etc/nginx/sites-available/default
+# Set index.html as the default nginx index
+sudo sed -i 's/index.nginx-debian.html/index.html/' /etc/nginx/sites-available/default
 
 sudo systemctl restart nginx
 
