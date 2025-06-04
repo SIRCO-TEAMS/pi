@@ -14,9 +14,6 @@ SETTINGS_FILE="$USERHOME/pispot/settings.txt"
 LOG_FILE="$USERHOME/pispot/setup.log"
 mkdir -p "$USERHOME/pispot"
 
-# Unblock Wi-Fi (no country code set here)
-sudo rfkill unblock wifi
-
 # Define log and save_setting functions EARLY so they're available for all uses
 log() {
     echo "$(date '+%Y-%m-%d %H:%M:%S') $*" | tee -a "$LOG_FILE"
