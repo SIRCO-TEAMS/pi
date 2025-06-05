@@ -16,15 +16,30 @@ fi
 
 # Create app directory
 sudo mkdir -p "$APP_DIR"
+sudo chown "$USER":"$USER" "$APP_DIR"
 cd "$APP_DIR"
 
-# Initialize npm project if not already
+# Create package.json if missing
 if [ ! -f package.json ]; then
-    npm init -y
+    sudo npm init -y
 fi
 
-# Install express and other dependencies
-npm install express multer
+# Add dependencies to package.json
+cat > package.json <<EOPKG
+{
+  "name": "pispot_node_server",
+  "version": "1.0.0",
+  "main": "server.js",
+  "license": "UNLICENSED",
+  "dependencies": {
+    "express": "^4.18.2",
+    "multer": "^1.4.5"
+  }
+}
+EOPKG
+
+# Install dependencies
+sudo npm install
 
 # Create server.js
 cat > server.js <<'EOF'
